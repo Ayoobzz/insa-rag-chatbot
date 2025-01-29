@@ -1,0 +1,13 @@
+# requirements.txt
+streamlit
+langchain
+langchain-groq
+langchain-weaviate
+weaviate-client
+selenium~=4.28.1
+beautifulsoup4~=4.12.3
+python-dotenv   # For environment variables
+azure-identity  # For Azure authentication
+pdfplumber~=0.11.5
+Scrapy~=2.12.0
+bs4~=0.0.2
