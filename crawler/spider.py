@@ -3,6 +3,8 @@ from scrapy.crawler import CrawlerRunner
 from scrapy import signals
 from urllib.parse import urlparse
 from twisted.internet import reactor
+import json
+
 
 class INSASpider(scrapy.Spider):
     name = "insa_spider"
@@ -23,7 +25,6 @@ class INSASpider(scrapy.Spider):
     def parse(self, response):
         title = response.css("title::text").get() or "No title"
         self.visited_links.add(response.url)
-        self.url_titles[response.url] = title
 
         yield {"url": response.url, "title": title}
 
@@ -32,14 +33,13 @@ class INSASpider(scrapy.Spider):
             if urlparse(absolute_url).netloc.endswith("insa-rennes.fr"):
                 yield response.follow(absolute_url, self.parse)
 
+
 def run_spider():
     visited_links = set()
-    url_titles = {}
 
     def handle_spider_closed(spider):
-        nonlocal visited_links, url_titles
+        nonlocal visited_links
         visited_links = spider.visited_links
-        url_titles = spider.url_titles
 
     runner = CrawlerRunner()
     crawler = runner.create_crawler(INSASpider)
@@ -48,9 +48,17 @@ def run_spider():
     d.addCallback(lambda _: reactor.stop())
     reactor.run()
 
-    return visited_links, url_titles
+    return visited_links
 
-# Run the spider and get results
-visited_links, url_titles = run_spider()
+
+
+visited_links = run_spider()
 print("Visited Links:", visited_links)
-print("URL Titles:", url_titles)
+print(len(visited_links))
+file_path = r"../data/urls"
+
+# Convert set to list and store it in the file
+with open(file_path, "w") as f:
+    json.dump(list(visited_links), f)
+
+
