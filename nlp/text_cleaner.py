@@ -37,8 +37,7 @@ def process_json(input_file, output_file):
         json.dump(processed_data, f, ensure_ascii=False, indent=4)
 
 
-input_json = "../data/results.json" # Replace with your input file name
-output_json = "../data/cleaned.json" # Replace with your desired output file name
-
-process_json(input_json, output_json)
-print(f"Processed JSON saved to {output_json}")
+#input_json = "../data/results.json"
+#output_json = "../data/cleaned.json"
+#process_json(input_json, output_json)
+#print(f"Processed JSON saved to {output_json}")

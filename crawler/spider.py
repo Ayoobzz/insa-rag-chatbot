@@ -55,9 +55,8 @@ def run_spider():
 visited_links = run_spider()
 print("Visited Links:", visited_links)
 print(len(visited_links))
-file_path = r"../data/urls"
+file_path = r"../data/raw/urls"
 
-# Convert set to list and store it in the file
 with open(file_path, "w") as f:
     json.dump(list(visited_links), f)
 

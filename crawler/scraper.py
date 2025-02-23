@@ -33,9 +33,9 @@ def scrape_list(urls):
     return results
 
 
-file_path = r"../data/urls"
+file_path = r"../data/raw/urls"
 with open(file_path, "r") as f:
     my_list = json.load(f)
     results = scrape_list(my_list)
-    with open(r"../data/results.json", "w") as f:
+    with open(r"../data/processed/results.json", "w") as f:
         json.dump(results, f)
