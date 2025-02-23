@@ -1,11 +1,11 @@
 import time
-
 import streamlit as st
 import os
 from dotenv import load_dotenv
 import logging
 from rich.console import Console
 from rich.logging import RichHandler
+import vectorstore.utils as utils
 
 console = Console()
 logging.basicConfig(
@@ -15,7 +15,6 @@ logging.basicConfig(
     handlers=[RichHandler(console=console, rich_tracebacks=True)]
 )
 def init():
-    # Load environment variables
     load_dotenv()
     api_key=os.getenv("GROQ_API_KEY")
     if api_key is None:
@@ -23,7 +22,6 @@ def init():
         st.error("GROQ_API_KEY not found in .env file")
         st.stop()
 
-    # Setup Streamlit page
     st.set_page_config(
         page_title="INSA Chatbot",
         page_icon="🎒"
@@ -33,6 +31,12 @@ def init():
 def create_streamlit_UI(title, description):
     st.title(title)
     st.markdown(description)
+
+    with st.sidebar:
+
+        st.subheader("Your PDFs 📖")
+        st.text_input("Enter a question")
+
 
 def handle_input(user_input):
     st.session_state.messages.append({"role": "user", "text": user_input})
@@ -56,6 +60,22 @@ def handle_input(user_input):
         st.error("⚠️ Please upload and process a PDF first.")
 
 def main():
+    init()
+    create_streamlit_UI("INSA Chatbot", "Ask me anything about INSA!")
+    if "chain" not in st.session_state:
+        st.session_state.chain = None
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    st.session_state.chain= utils.process_data()
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["text"])
+
+    user_input = st.chat_input("Ask me anything about INSA Rennes", key="user_input")
+    if user_input:
+        handle_input(user_input)
 
 
 
