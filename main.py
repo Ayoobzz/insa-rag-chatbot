@@ -33,7 +33,6 @@ def create_streamlit_UI(title, description):
     st.markdown(description)
 
     with st.sidebar:
-
         st.subheader("Your PDFs 📖")
         st.text_input("Enter a question")
 
