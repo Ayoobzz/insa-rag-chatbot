@@ -150,7 +150,7 @@ def query_index(
     except PineconeException as e:
         raise Exception(f"Error encountered during query: {str(e)}")
 
-    return results
+    return results["matches"]
 
 
 
