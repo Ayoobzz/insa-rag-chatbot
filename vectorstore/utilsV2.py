@@ -116,6 +116,53 @@ def index_init(data, index_name="insa-chatbot", batch_size=32):
     return index
 
 
+def query_index(
+        index, query_text,
+        model="jinaai/jina-embeddings-v3",
+        tokenizer=None,
+        topk=5,
+        device="cuda" if torch.cuda.is_available() else "cpu"):
+    """
+    Args:
+        index: Pinecone index object
+        query_text: String containing the user's query
+        tokenizer: Pre-trained tokenizer for the embedding model
+        model: Pre-trained embedding model
+        top_k: Number of top results to return
+        device: Device to run the model on (cuda or cpu)
+
+    Returns:
+        List of dictionaries containing matched documents and their metadata
+    """
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+
+    inputs = tokenizer(query_text, padding=True, truncation=True, return_tensors="pt").to(device)
+    with torch.no_grad():
+        query_embeddings = model(**inputs).last_hidden_state[:, 0, :].cpu().numpy().squeeze().tolist()
+
+    try:
+        results = index.query(
+            vector=query_embeddings,
+            top_k=topk,
+            include_metadata=True
+        )
+    except PineconeException as e:
+        raise Exception(f"Error encountered during query: {str(e)}")
+
+    return results
+
+
+
+
+
+
+
+
+
+
+
+
 """def main():
 
     data_path = "../data/processed/cleaned.json"
