@@ -116,41 +116,72 @@ def index_init(data, index_name="insa-chatbot", batch_size=32):
     return index
 
 
-def query_index(
-        index, query_text,
-        model="jinaai/jina-embeddings-v3",
-        tokenizer=None,
-        topk=5,
-        device="cuda" if torch.cuda.is_available() else "cpu"):
+def connect_to_index(index_name="insa-chatbot"):
     """
+    Connect to an existing Pinecone index.
+
     Args:
-        index: Pinecone index object
+        index_name: Name of the Pinecone index
+
+    Returns:
+        Pinecone Index object
+    """
+    # Load environment variables
+    load_dotenv()
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    if not PINECONE_API_KEY:
+        raise ValueError("PINECONE_API_KEY not found in environment variables")
+
+    # Initialize Pinecone
+    try:
+        pinecone = Pinecone(api_key=PINECONE_API_KEY)
+    except Exception as e:
+        raise Exception(f"Failed to initialize Pinecone: {str(e)}")
+    if index_name not in pinecone.list_indexes().names():
+        raise ValueError(f"Index {index_name} not found in Pinecone")
+    else:
+        return pinecone.Index(index_name)
+
+
+def query_index(
+    index,
+    query_text,
+    model=None,
+    tokenizer=None,
+    top_k=5,
+    device="cuda" if torch.cuda.is_available() else "cpu"):
+    """
+    Query the Pinecone index with a text query and return relevant documents.
+
+    Args:
+        index: Pinecone Index object
         query_text: String containing the user's query
-        tokenizer: Pre-trained tokenizer for the embedding model
-        model: Pre-trained embedding model
+        model: Pre-trained embedding model (optional)
+        tokenizer: Pre-trained tokenizer (optional)
         top_k: Number of top results to return
         device: Device to run the model on (cuda or cpu)
 
     Returns:
         List of dictionaries containing matched documents and their metadata
     """
-    if tokenizer is None:
-        tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
+    model_name = "jinaai/jina-embeddings-v3"
 
+    if model is None:
+        model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+    if tokenizer is None:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)  # Use model_name, not model
+
+    model.to(device)
     inputs = tokenizer(query_text, padding=True, truncation=True, return_tensors="pt").to(device)
     with torch.no_grad():
         query_embeddings = model(**inputs).last_hidden_state[:, 0, :].cpu().numpy().squeeze().tolist()
 
     try:
-        results = index.query(
-            vector=query_embeddings,
-            top_k=topk,
-            include_metadata=True
-        )
+        results = index.query(vector=query_embeddings, top_k=top_k, include_metadata=True)
+        return results["matches"]
     except PineconeException as e:
         raise Exception(f"Error encountered during query: {str(e)}")
 
-    return results["matches"]
 
 
 
@@ -161,28 +192,11 @@ def query_index(
 
 
 
-
-
-"""def main():
-
-    data_path = "../data/processed/cleaned.json"
-    try:
-        with open(data_path, encoding="utf-8") as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Data file not found at {data_path}")
-    except json.JSONDecodeError:
-        raise ValueError(f"Invalid JSON in file {data_path}")
-
-
-    try:
-        data = chunking.chunk_data(data)
-    except NameError:
-        print("Warning: Proceeding without chunking as chunking module is not available")
-    except Exception as e:
-        raise Exception(f"Error in chunking data: {str(e)}")
-
-    index_init(data)
-
-
-main()"""
+# Query the index
+query_text = "quels sont les filieres de l'INSA?"
+index = connect_to_index()
+results = query_index(index, query_text)
+print(f"Query: {query_text}")
+print("Results:")
+for match in results:
+    print(f"Score: {match['score']}, Text: {match['metadata']['text']}, URL: {match['metadata']['url']}, title: {match['metadata']['title']}")
