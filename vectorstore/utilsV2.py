@@ -6,6 +6,7 @@ from transformers import AutoModel, AutoTokenizer
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.exceptions import PineconeException  # Updated import
 from nlp import chunking
+from groq import Groq
 
 
 def index_init(data, index_name="insa-chatbot", batch_size=32):
@@ -144,12 +145,12 @@ def connect_to_index(index_name="insa-chatbot"):
 
 
 def query_index(
-    index,
-    query_text,
-    model=None,
-    tokenizer=None,
-    top_k=5,
-    device="cuda" if torch.cuda.is_available() else "cpu"):
+        index,
+        query_text,
+        model=None,
+        tokenizer=None,
+        top_k=5,
+        device="cuda" if torch.cuda.is_available() else "cpu"):
     """
     Query the Pinecone index with a text query and return relevant documents.
 
@@ -183,20 +184,70 @@ def query_index(
         raise Exception(f"Error encountered during query: {str(e)}")
 
 
+def generate_responses(query_text, retrieved_docs):
+    """
+    Generate responses based on the user's query and retrieved documents.
+
+    Args:
+        query_text: String containing the user's query
+        retrieved_docs: List of dictionaries containing matched documents and their metadata
+
+    Returns:
+        List of strings containing responses
+    """
+    groq_api = os.getenv("GROQ_API_KEY")
+    if not groq_api:
+        raise ValueError("GROQ_API_KEY not found in environment variables")
+    client = Groq(api_key=groq_api)
+
+    context_parts = []
+    for doc in retrieved_docs:
+        text = doc["metadata"]["text"]
+        url = doc["metadata"]["url"]
+        title = doc["metadata"]["title"]
+        chunk_number = doc["metadata"]["chunk_number"]
+        score = doc["score"]
+        context_entry = (
+            f"document title: {title} \n"
+            f"document text: {text}"
+            f"document URL: {url} \n"
+            f"chunk number: {chunk_number} \n"
+            f"similarity score: {score}"
+
+        )
+        context_parts.append(context_entry)
+    context = " \n-----\n".join(context_parts)
+    prompt = (
+        f"Question: {query_text}\n\n"
+        f"Context (Retrieved Documents with Metadata):\n{context}\n\n"
+        "Answer:"
+    )
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {"role": "system",
+             "content": ("You're INSA Chatbot, a helpful chatbot assistant for insa Rennes students."
+                         "Use the provided context, including metadata, to give accurate and detailed answers."
+                         "if the context is not enough, you can ask for more information or clarification."
+                         "if possible provide a link to the source of the information.")
+             },
+            {"role": "user", "content": prompt}
+        ],
+        model="llama3-70b-8192",
+        temperature=0.1,
+        max_tokens=1000
+    )
+
+    return chat_completion.choices[0].message.content
 
 
-
-
-
-
-
-
-
-# Query the index
-query_text = "quels sont les filieres de l'INSA?"
+"""# Query the index
+query_text = "quelle est la date de rentrée pour l'insa"
 index = connect_to_index()
 results = query_index(index, query_text)
 print(f"Query: {query_text}")
 print("Results:")
 for match in results:
-    print(f"Score: {match['score']}, Text: {match['metadata']['text']}, URL: {match['metadata']['url']}, title: {match['metadata']['title']}")
+    print(
+        f"Score: {match['score']}, Text: {match['metadata']['text']}, URL: {match['metadata']['url']}, title: {match['metadata']['title']}")
+print(generate_responses(query_text, results))"""
