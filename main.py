@@ -1,11 +1,12 @@
 import time
+import streamlit
 import streamlit as st
 import os
 from dotenv import load_dotenv
 import logging
 from rich.console import Console
 from rich.logging import RichHandler
-import vectorstore.utils as utils
+import vectorstore.utilsV2 as utils
 
 console = Console()
 logging.basicConfig(
@@ -22,19 +23,24 @@ def init():
         st.error("GROQ_API_KEY not found in .env file")
         st.stop()
 
+
+
+def create_streamlit_UI(title, description):
     st.set_page_config(
         page_title="INSA Chatbot",
         page_icon="🎒"
     )
     st.header("Welcome to INSA Chatbot")
-
-def create_streamlit_UI(title, description):
     st.title(title)
     st.markdown(description)
-
     with st.sidebar:
-        st.subheader("Your PDFs 📖")
-        st.text_input("Enter a question")
+        st.image("assets/chatbot.png")
+        st.title("Settings")
+        st.subheader("Your API Keys 🗝️")
+        st.text_input("Jina API Key")
+        st.text_input("GROQ API Key")
+
+
 
 
 def handle_input(user_input):
@@ -66,15 +72,27 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    st.session_state.chain= utils.process_data()
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["text"])
+    index = utils.connect_to_index()
 
     user_input = st.chat_input("Ask me anything about INSA Rennes", key="user_input")
     if user_input:
-        handle_input(user_input)
+        with streamlit.chat_message("user"):
+            st.markdown(user_input)
+        st.session_state.messages.append({"role": "user", "text": user_input})
+        with st.spinner("Thinking..."):
+            try:
+                results = utils.query_index(index, user_input)
+                response = utils.generate_responses(user_input, results)
+                with streamlit.chat_message("assistant"):
+                    st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "text": response})
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
 
 
 
