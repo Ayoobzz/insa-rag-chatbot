@@ -1,5 +1,5 @@
 from crewai import Task
-from tools import rag_search, timetable_lookup  # Import tools explicitly
+from crew.tools import rag_search, timetable_lookup  # Import tools explicitly
 
 def create_rag_task(agent, query: str) -> Task:
     """Create a task for answering a general query using RAG."""
