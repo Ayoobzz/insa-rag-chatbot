@@ -240,30 +240,13 @@ def generate_responses(query_text, retrieved_docs):
     return chat_completion.choices[0].message.content
 
 
-@tool("RAG Search")
+
 def rag_search(query: str) -> str:
-    """Searches the INSA Rennes knowledge base using RAG and generates a response.
-
-    Args:
-        query: The student's question or query.
-
-    Returns:
-        A detailed response based on retrieved documents.
-    """
+    """Searches the INSA Rennes knowledge base using RAG and generates a response."""
     index = connect_to_index()
     retrieved_docs = query_index(index, query)
     return generate_responses(query, retrieved_docs)
 
-
-@tool("Timetable Lookup")
-def timetable_lookup(query: str) -> any:
-    """Fetches timetable information for INSA Rennes students.
-
-    Args:
-        query: The student's timetable-related question.
-
-    Returns:
-        Timetable details (placeholder for now).
-    """
-    # Placeholder logic; replace with actual timetable API/database integration
+def timetable_lookup(query: str) -> str:
+    """Fetches timetable information for INSA Rennes students."""
     return f"Timetable info for '{query}' (placeholder response)."

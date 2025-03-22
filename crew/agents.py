@@ -1,43 +1,54 @@
 import os
-from crewai import Agent
-from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from tools import rag_search
-from tools import timetable_lookup
+from langchain.tools import Tool
+from langchain.prompts import ChatPromptTemplate
+from dotenv import load_dotenv
+from crew.tools import rag_search, timetable_lookup
 
+def setup_agents():
+    load_dotenv()
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY not found in environment variables")
 
-
-def setup_agents(llm) -> dict:
-    if llm is None:
-        load_dotenv()
-        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-        if not GROQ_API_KEY:
-            raise ValueError("GROQ_API_KEY not found in environment variables")
-
-        llm = ChatGroq(
-            model="llama3-70b-8192",
-            api_key=GROQ_API_KEY,
-            temperature=0.1,
-            max_tokens=1000
-        )
-    main_agent = Agent(
-        role="Main INSA Chatbot",
-        goal="Assist INSA Rennes students by answering queries or delegating to specialists.",
-        backstory="You're the central assistant for INSA Rennes students, coordinating with other agents.",
-        tools=[rag_search],
-        verbose=True,
-        allow_delegation=True,
-        llm=llm
+    llm = ChatGroq(
+        model="llama3-70b-8192",
+        api_key=GROQ_API_KEY,
+        temperature=0.1,
+        max_tokens=1000
     )
 
-    # Timetable Agent
-    timetable_agent = Agent(
-        role="Timetable Specialist",
-        goal="Provide accurate timetable information to INSA Rennes students.",
-        backstory="You're an expert in INSA Rennes schedules and timetables.",
-        tools=[timetable_lookup],
-        verbose=True,
-        allow_delegation=False,
-        llm=llm
+    rag_tool = Tool(
+        name="RAG_Search",
+        func=rag_search,
+        description="Search the INSA Rennes knowledge base using RAG."
     )
-    return {"Main_agent": main_agent, "Timetable_agent": timetable_agent}
+    timetable_tool = Tool(
+        name="Timetable_Lookup",
+        func=timetable_lookup,
+        description="Fetch timetable information for INSA Rennes students."
+    )
+
+    main_prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are the central assistant for INSA Rennes students. Use the conversation history to provide context-aware responses. Answer directly if the query is simple (e.g., about the date or basic info). Otherwise, decide whether to use the RAG_Search tool for general queries or the Timetable_Lookup tool for timetable-related queries. If unsure, use RAG_Search."),
+    ])
+
+    timetable_prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an expert in INSA Rennes schedules and timetables. Use the conversation history to provide context-aware timetable information. Use the Timetable_Lookup tool to fetch accurate timetable details."),
+    ])
+
+    main_agent_llm = llm.bind_tools([rag_tool, timetable_tool])
+    timetable_agent_llm = llm.bind_tools([timetable_tool])
+
+    return {
+        "Main_agent": {
+            "llm": main_agent_llm,
+            "prompt": main_prompt,
+            "tools": [rag_tool, timetable_tool]
+        },
+        "Timetable_agent": {
+            "llm": timetable_agent_llm,
+            "prompt": timetable_prompt,
+            "tools": [timetable_tool]
+        }
+    }
