@@ -6,7 +6,7 @@ def login(driver, username, password):
     """
     Logs into the INSA Rennes intranet.
     """
-    driver.get("https://intranet.insa-rennes.fr/")  # Replace with the actual login URL
+    driver.get("https://intranet.insa-rennes.fr/")
     WebDriverWait(driver, 10).until(
         EC.presence_of_element_located((By.ID, "username"))
     )
@@ -14,5 +14,5 @@ def login(driver, username, password):
     driver.find_element(By.ID, "password").send_keys(password)
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
     WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "body"))  # Wait for login to complete
+        EC.presence_of_element_located((By.CSS_SELECTOR, "body"))
     )
