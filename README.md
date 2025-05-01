@@ -4,6 +4,9 @@
 
 INSA Chatbot is a **Streamlit-based AI assistant** designed to help students with their queries about **INSA Rennes**. It leverages **LangGraph for agent orchestration**, along with **NLP processing and web scraping**, to provide accurate and up-to-date information. Currently, the chatbot integrates **Jina & GROQ APIs**, and work is in progress to expand support for additional agents.
 
+[Demo Video](https://www.youtube.com/watch?v=WobU92WeEPE&ab_channel=AyoubAkremi%28Ayoobz%29)
+
+
 ## ✨ Features
 
 ✅ **Interactive chatbot UI** with real-time responses\
@@ -25,6 +28,7 @@ cd insa-rag-chatbot
 ```sh
 pip install -r requirements.txt
 ```
+
 
 3️⃣ Set up your **API keys** in a `.env` file:
 
@@ -76,5 +80,5 @@ This project is licensed under the **MIT License**.
 
 ## 🤝 Contributions
 
-We welcome contributions! Feel free to **submit issues** or **pull requests** to improve the chatbot. 🚀
+We welcome contributions! Feel free to **submit issues** or **pull requests** to improve the chatbot. 
 
