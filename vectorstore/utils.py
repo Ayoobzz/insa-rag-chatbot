@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import torch
 from transformers import AutoModel, AutoTokenizer
 from pinecone import Pinecone, ServerlessSpec
-from pinecone.exceptions import PineconeException  # Updated import
+from pinecone.exceptions import PineconeException
 from nlp import chunking
 from groq import Groq
 
@@ -241,13 +241,3 @@ def generate_responses(query_text, retrieved_docs):
     return chat_completion.choices[0].message.content
 
 
-"""# Query the index
-query_text = "quelle est la date de rentrée pour l'insa"
-index = connect_to_index()
-results = query_index(index, query_text)
-print(f"Query: {query_text}")
-print("Results:")
-for match in results:
-    print(
-        f"Score: {match['score']}, Text: {match['metadata']['text']}, URL: {match['metadata']['url']}, title: {match['metadata']['title']}")
-print(generate_responses(query_text, results))"""
