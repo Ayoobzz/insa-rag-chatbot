@@ -34,7 +34,7 @@ def main_agent_node(state: AgentState, agents: dict) -> dict:
             next_step = END
     else:
         query = state["messages"][-1].content.lower()
-        current_date = datetime(2025, 3, 22)  # Hardcoded per instructions
+        current_date = datetime.now()
         if "date" in query or "today" in query:
             response = AIMessage(content=f"The current date is {current_date.strftime('%B %d, %Y')}.")
         elif "tomorrow" in query:
