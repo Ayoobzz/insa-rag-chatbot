@@ -32,21 +32,6 @@ def main_agent_node(state: AgentState, agents: dict) -> dict:
         else:
             response = AIMessage(content="Unknown tool called.")
             next_step = END
-    else:
-        query = state["messages"][-1].content.lower()
-        current_date = datetime.now()
-        if "date" in query or "today" in query:
-            response = AIMessage(content=f"The current date is {current_date.strftime('%B %d, %Y')}.")
-        elif "tomorrow" in query:
-            tomorrow = current_date + timedelta(days=1)
-            response = AIMessage(content=f"Tomorrow is {tomorrow.strftime('%B %d, %Y')}.")
-        else:
-            response_content = getattr(response, "content", "")
-            if not response_content or "<tool-use>" in response_content:
-                response = AIMessage(content="Hello! How can I assist you today?")
-            else:
-                response = AIMessage(content=response_content)
-        next_step = END
 
     logging.debug(f"Main_agent processed response: {response.content}")
     return {
